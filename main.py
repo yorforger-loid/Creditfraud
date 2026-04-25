@@ -1,4 +1,3 @@
-# ✅ FIXED — correct order
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
@@ -15,6 +14,7 @@ app.add_middleware(
 )
 
 model = joblib.load("fraud_model.pkl")
+scaler = joblib.load("scaler.pkl")   # ← load scaler
 
 @app.get("/")
 def home():
@@ -23,5 +23,9 @@ def home():
 @app.post("/predict")
 def predict(data: dict):
     input_data = np.array(data["input"]).reshape(1, -1)
+    
+    # Scale Amount (index 29) before prediction
+    input_data[0][29] = scaler.transform([[input_data[0][29]]])[0][0]
+    
     prediction = model.predict(input_data)
     return {"prediction": int(prediction[0])}
